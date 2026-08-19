@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Canary: the pin is frozen, but OSforGFF main moves. Catch drift within a day.
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  metadata:
+    name: formalization.yaml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: ruby/setup-ruby@v1
+        with: { ruby-version: "3.3.12" }
+      - name: Validate against the Palomar metadata rules
+        run: ruby scripts/validate-formalization.rb
+
+  build:
+    name: Build the pair at the pinned commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+      # defaultTargets is ["Challenge", "Solution"], so a plain build covers both.
+      - uses: leanprover/lean-action@v1
+        with:
+          build: true
+          test: false
+          lint: false
+          use-mathlib-cache: true
+
+  canary:
+    name: Build against OSforGFF main (drift check)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    # Informational: OSforGFF main moving ahead of the pin is expected and is not a
+    # failure of this repository. A red canary means the registered statement no longer
+    # builds against the library, which is the signal to re-pin and re-verify.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+      - name: Repoint the requirement at OSforGFF main
+        run: |
+          head=$(git ls-remote https://github.com/mrdouglasny/OSforGFF.git refs/heads/main | cut -f1)
+          echo "OSforGFF main is $head"
+          pinned=$(grep -oE '[0-9a-f]{40}' lakefile.toml | head -1)
+          if [ "$head" = "$pinned" ]; then echo "pin is current; canary is a no-op"; fi
+          sed -i "s/$pinned/$head/" lakefile.toml
+      - uses: leanprover/lean-action@v1
+        with:
+          build: true
+          test: false
+          lint: false
+          use-mathlib-cache: true

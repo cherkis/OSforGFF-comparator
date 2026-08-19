@@ -1,0 +1,20 @@
+name = "OSforGFFComparator"
+version = "0.1.0"
+defaultTargets = ["Challenge", "Solution"]
+
+# The substantive development. Mathlib reaches the workspace through it, which is
+# what lets Challenge.lean import Mathlib while importing no project source.
+[[require]]
+name = "OSforGFF"
+git = "https://github.com/mrdouglasny/OSforGFF.git"
+rev = "2d572f08a8fb59b489cbc8c9e8dd2e95b4209c72"
+
+# The auditable statement: Mathlib-only imports, one `sorry` per advertised declaration.
+[[lean_lib]]
+name = "Challenge"
+roots = ["Challenge"]
+
+# The same declarations, proved from OSforGFF.
+[[lean_lib]]
+name = "Solution"
+roots = ["Solution"]

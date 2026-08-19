@@ -45,6 +45,28 @@ jobs:
           lint: false
           use-mathlib-cache: true
 
+  comparator:
+    name: Comparator under a real sandbox
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+      # Installs elan and warms the Mathlib cache; the script below drives lake itself.
+      - uses: leanprover/lean-action@v1
+        with:
+          build: true
+          test: false
+          lint: false
+          use-mathlib-cache: true
+      # Builds pinned Comparator, lean4export, NanoDa and Landrun, then runs the
+      # comparison inside a real Landrun sandbox with the independent NanoDa replay.
+      # This is the check Palomar itself performs; `go` and `cargo` come with the runner.
+      - name: Verify with pinned Comparator, NanoDa and Landrun
+        run: ./scripts/verify-comparator.sh
+
   canary:
     name: Build against OSforGFF main (drift check)
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

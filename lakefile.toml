@@ -7,7 +7,7 @@ defaultTargets = ["Challenge", "Solution"]
 [[require]]
 name = "OSforGFF"
 git = "https://github.com/mrdouglasny/OSforGFF.git"
-rev = "48c3a700ed12a85f3c94f26f9b0a73257ced5302"
+rev = "bef76a68dc9f483a6fe3f405bcf5f2cc467b92b8"
 
 # The auditable statement: Mathlib-only imports, one `sorry` per advertised declaration.
 [[lean_lib]]

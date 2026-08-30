@@ -46,7 +46,7 @@ project:
 repository:
   substantive_formalization:
     id: "mrdouglasny/OSforGFF"
-    revision: "48c3a700ed12a85f3c94f26f9b0a73257ced5302"
+    revision: "bef76a68dc9f483a6fe3f405bcf5f2cc467b92b8"
 
 sources:
   - title: "Quantum Physics: A Functional Integral Point of View"

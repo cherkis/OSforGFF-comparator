@@ -65,12 +65,14 @@ exhibiting the library's constructed transform as the witness. The characterised
 is therefore **strictly stronger, conjunct by conjunct**, than the fully-constructed
 formulation it replaced.
 
-That equivalence is itself machine-checked: `StatementEquivalence.lean` (repository root)
-reproduces the earlier fully-constructed formulation verbatim under `Challenge.Orig`,
-verifies the shared foundation is byte-identical, and proves the two full `∃ μ` theorem
-statements equivalent for every `d ≥ 2` and mass — per-axiom iffs plus the existence
-conjuncts, all bridges definitional. It is deliberately not a lake target (it plays no role
-in the Comparator run); check it with `lake env lean StatementEquivalence.lean`.
+That equivalence is itself machine-checked: `StatementEquivalence.lean`, on the
+[`statement-equivalence`](https://github.com/mrdouglasny/OSforGFF-comparator/tree/statement-equivalence)
+branch of this repository, reproduces the earlier fully-constructed formulation verbatim
+under `Challenge.Orig`, verifies the shared foundation is byte-identical, and proves the
+two full `∃ μ` theorem statements equivalent for every `d ≥ 2` and mass — per-axiom iffs
+plus the existence conjuncts, all bridges definitional. It is a verification artifact, not
+part of the registry pair (it plays no role in the Comparator run), which is why it lives
+on its own branch; check it there with `lake env lean StatementEquivalence.lean`.
 
 One transform family stays constructed: the mollifier bumps
 `bumpToSchwartz`/`standardBumpSequence` used by OS1's two-point regularity. Quantifying
@@ -96,8 +98,9 @@ functions is defined.
   with `./scripts/verify-comparator.sh`.
 - `scripts/check-pair.sh` — additionally gates the pair at source level (no axioms or
   escape hatches; exactly one `sorry`, in `Challenge.lean`).
-- `lake env lean StatementEquivalence.lean` — checks the equivalence of the characterised
-  statement with the fully-constructed formulation (see above; not a lake target).
+- on branch `statement-equivalence`: `lake env lean StatementEquivalence.lean` — checks
+  the equivalence of the characterised statement with the fully-constructed formulation
+  (see above).
 
 ## Dictionary
 

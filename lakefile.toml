@@ -6,8 +6,8 @@ defaultTargets = ["Challenge", "Solution"]
 # what lets Challenge.lean import Mathlib while importing no project source.
 [[require]]
 name = "OSforGFF"
-git = "https://github.com/mrdouglasny/OSforGFF.git"
-rev = "48c3a700ed12a85f3c94f26f9b0a73257ced5302"
+git = "https://github.com/cherkis/OSforGFFgeneral.git"
+rev = "6a9ea5315e9e89be5db6e93cb6d8752bd91d0936"
 
 # The auditable statement: Mathlib-only imports, one `sorry` per advertised declaration.
 [[lean_lib]]

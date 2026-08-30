@@ -3,12 +3,14 @@ import Challenge
 /-!
 # Equivalence of the constructed and characterised Challenge statements
 
-The registry Challenge exists in two formulations: the original 655-line file, in which
-every transformed test function entering an OS axiom (Euclidean pullback, OS star, time
+The registry Challenge exists in two formulations: the original 655-line constructed
+formulation — the pre-adoption `Challenge.lean`, no longer in the tree but preserved in
+this repository's git history and reproduced verbatim in this file — in which every
+transformed test function entering an OS axiom (Euclidean pullback, OS star, time
 translate, spacetime translate, smeared mollifier) is CONSTRUCTED as a Schwartz map, and
-the slimmed 389-line file, in which each axiom instead QUANTIFIES over any test function
-with the required pointwise values, with existence conjuncts in the theorem guarding
-against vacuity.
+the current 389-line `Challenge.lean`, in which each axiom instead QUANTIFIES over any
+test function with the required pointwise values, with existence conjuncts in the theorem
+guarding against vacuity.
 
 This file proves the two are equivalent, axiom by axiom and for the full theorem
 statements. It imports the slim `Challenge`, reproduces the original file's constructed
@@ -25,7 +27,9 @@ the slim import), and proves:
 * `statements_equiv` — the two theorem statements (the full `∃ μ, …` propositions) are
   equivalent, for every `d ≥ 2` and every mass.
 
-This file is a verification artifact, not part of the registry pair.
+This file is a verification artifact, not part of the registry pair. It lives on the
+`statement-equivalence` branch, off the submitted `main`; check it with
+`lake env lean StatementEquivalence.lean` after `lake build`.
 -/
 
 namespace Challenge

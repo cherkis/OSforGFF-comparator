@@ -46,7 +46,7 @@ project:
 repository:
   substantive_formalization:
     id: "mrdouglasny/OSforGFF"
-    revision: "48c3a700ed12a85f3c94f26f9b0a73257ced5302"
+    revision: "bef76a68dc9f483a6fe3f405bcf5f2cc467b92b8"
 
 sources:
   - title: "Quantum Physics: A Functional Integral Point of View"
@@ -189,9 +189,10 @@ fidelity:
     axiom quantifies over any test function with the required values, and four existence
     conjuncts of the theorem (EuclideanPullbackExists, TimeReflectionStarExists,
     TimeTranslationExists, TranslationExists) assert that such test functions exist, so no
-    axiom holds vacuously. StatementEquivalence.lean (repository root; not a lake target)
-    machine-checks that this characterised statement is equivalent to the fully-constructed
-    formulation. See docs/challenge.md for the design and the full dictionary.
+    axiom holds vacuously. StatementEquivalence.lean, on the statement-equivalence branch
+    of this repository, machine-checks that this characterised statement is equivalent to
+    the earlier fully-constructed formulation. See docs/challenge.md for the design and
+    the full dictionary.
   axiom_footprint: >
     The Solution theorem depends on exactly Lean's three foundational axioms (propext,
     Classical.choice, Quot.sound), enforced by comparator.json's permitted_axioms. The

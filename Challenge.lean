@@ -10,7 +10,7 @@ import Mathlib
 # Challenge: the Gaussian Free Field satisfies the Osterwalder–Schrader axioms
 
 This file states, in Mathlib-only terms, the construction of Euclidean quantum field theory's
-simplest interacting-free model: for every spacetime dimension `d ≥ 2` and mass `m > 0`, the
+simplest, interaction-free model: for every spacetime dimension `d ≥ 2` and mass `m > 0`, the
 free (massive) **Gaussian Free Field** exists as a probability measure on the tempered
 distributions `S'(ℝ^d)` and satisfies all five **Osterwalder–Schrader axioms** — OS0
 (analyticity), OS1 (regularity), OS2 (Euclidean invariance), OS3 (reflection positivity), and
@@ -27,10 +27,22 @@ requiring no operator theory. Without this clause the existence statement would 
 that *the free field* satisfies them.
 
 All definitions below are self-contained over Mathlib: the field configuration space and its
-cylinder σ-algebra, the generating functionals, the free covariance, the Euclidean group and
-its action on test functions, time reflection and the Osterwalder–Schrader star operation,
-positive-time test functions, time translations, the mollifier-regularized two-point function,
-and the five OS axiom predicates. The single `sorry` is the theorem to be proved.
+cylinder σ-algebra, the generating functionals, the free covariance, the Schwinger functions
+and the mollifier bumps, time reflection, the positive-time half-space, time shifts, and the
+five OS axiom predicates.
+
+Euclidean invariance (OS2), the OS star of reflection positivity (OS3), the mollifier
+smearing of the two-point function (OS1), and the translations of clustering and of the
+ergodic time average (OS4) are stated by *characterising* the relevant transformed test
+functions — the pullback `f(g⁻¹x)`, the reflected conjugate `conj (f (Θx))`, the translate
+`f(x − a)` — pointwise, rather than constructing them as Schwartz maps: that each transform
+is again a Schwartz function is a fact of analysis, not part of the statement, so each axiom
+simply quantifies over any test function with the required values, as in "for every `f'`
+with `f' x = f (g⁻¹ x)`, …". Two test functions with the same values are equal, so this
+states the same axiom — provided such `f'` exist at all. The four `…Exists` clauses of the
+theorem (`EuclideanPullbackExists`, `TimeReflectionStarExists`, `TimeTranslationExists`,
+`TranslationExists`) assert precisely that existence, so no axiom can hold vacuously. The
+single `sorry` is the theorem to be proved.
 
 The formulation of the axioms follows Glimm–Jaffe, *Quantum Physics: A Functional Integral
 Point of View* (Springer, 1987), ch. 6, stated for probability measures on `S'(ℝ^d)`; OS3 is
@@ -159,33 +171,11 @@ def SchwingerFunction₂ (dμ_config : ProbabilityMeasure (FieldConfiguration d)
     (f g : TestFunction d) : ℝ :=
   SchwingerFunction dμ_config 2 ![f, g]
 
-lemma sub_const_hasTemperateGrowth {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (a : E) : Function.HasTemperateGrowth (fun x : E => x - a) := by fun_prop
-
-lemma sub_const_antilipschitz {E : Type*} [NormedAddCommGroup E] (a : E) :
-    AntilipschitzWith 1 (fun x : E => x - a) := by
-  intro x y
-  simp [edist_dist, dist_eq_norm]
-
-/-- Translation of a Schwartz function by a vector: `(translateSchwartz f a)(x) = f(x − a)`.
-Translation `x ↦ x − a` is an isometry with temperate growth, so it preserves the Schwartz
-class. -/
-def translateSchwartz (f : TestFunction d) (a : SpaceTime d) : TestFunction d :=
-  SchwartzMap.compCLMOfAntilipschitz ℝ (sub_const_hasTemperateGrowth a)
-    (sub_const_antilipschitz a) f
-
 /-- The L¹-normalized smooth bump function attached to a `ContDiffBump` centered at the
 origin, viewed as a Schwartz function (it is smooth with compact support). It integrates
 to `1`, so it is a mollifier. -/
 def bumpToSchwartz (φ : ContDiffBump (0 : SpaceTime d)) : TestFunction d :=
   (φ.hasCompactSupport_normed (μ := volume)).toSchwartzMap φ.contDiff_normed
-
-/-- The two-point function smeared against a mollifier: the covariance evaluated on a
-normalized bump translated to `x` against the same bump at the origin,
-`∫∫ φ(u − x) ⟨φ(u) φ(v)⟩ φ(v) du dv`. -/
-def SmearedTwoPointFunction (dμ_config : ProbabilityMeasure (FieldConfiguration d))
-    (φ : ContDiffBump (0 : SpaceTime d)) (x : SpaceTime d) : ℝ :=
-  SchwingerFunction₂ dμ_config (translateSchwartz (bumpToSchwartz φ) x) (bumpToSchwartz φ)
 
 /-- The standard mollifier sequence: bumps with outer radius `1/n` (and inner radius
 `1/(2n)`), shrinking to the origin as `n → ∞`. -/
@@ -199,120 +189,6 @@ def standardBumpSequence (n : ℕ) (hn : n ≠ 0) : ContDiffBump (0 : SpaceTime 
       have : (2 * (n : ℝ))⁻¹ < (n : ℝ)⁻¹ := inv_strictAnti₀ hn' (by linarith)
       simp only [one_div]
       exact this }
-
-/-- The pointwise two-point function `S₂(x)`, defined as the mollifier limit of smeared
-two-point functions along the standard bump sequence, regularized to `0` at the coincident
-point `x = 0` (where the two-point function of a quantum field diverges). -/
-def SchwingerTwoPointFunction
-    (dμ_config : ProbabilityMeasure (FieldConfiguration d)) (x : SpaceTime d) : ℝ :=
-  if x = 0 then 0
-  else
-    Filter.limUnder Filter.atTop
-      (fun n : ℕ => if hn : n = 0 then 0
-        else SmearedTwoPointFunction dμ_config (standardBumpSequence n hn) x)
-
-/-! ## The Euclidean group and its action on test functions -/
-
-/-- Orthogonal linear isometries of `ℝ^d`: the group `O(d)`. -/
-abbrev Rotation (d : ℕ) : Type :=
-  LinearIsometry (RingHom.id ℝ) (SpaceTime d) (SpaceTime d)
-
-/-- A Euclidean motion of `ℝ^d`: a rotation/reflection `R ∈ O(d)` followed by a translation,
-`x ↦ R x + t`. These form the Euclidean group `E(d) = ℝ^d ⋊ O(d)`. -/
-structure E (d : ℕ) where
-  /-- The rotation/reflection part. -/
-  R : Rotation d
-  /-- The translation part. -/
-  t : SpaceTime d
-
-/-- The action of a Euclidean motion on a spacetime point: `g • x = R x + t`. -/
-def act (g : E d) (x : SpaceTime d) : SpaceTime d := g.R x + g.t
-
-/-- The inverse of a linear isometry of `ℝ^d` (finite dimension makes every isometry
-surjective, so the inverse isometry exists). -/
-noncomputable def Rotation.inv (g : Rotation d) : Rotation d :=
-  ((g.toLinearIsometryEquiv rfl).symm).toLinearIsometry
-
-/-- The inverse Euclidean motion: `(R, t)⁻¹ = (R⁻¹, −R⁻¹ t)`. -/
-noncomputable instance instInvE : Inv (E d) where
-  inv g := ⟨Rotation.inv g.R, -(Rotation.inv g.R) g.t⟩
-
-/-- The pullback map underlying the action of `g` on functions: `x ↦ g⁻¹ • x`. -/
-noncomputable def euclidean_pullback (g : E d) : SpaceTime d → SpaceTime d := act g⁻¹
-
-lemma contDiff_act_inv (g : E d) : ContDiff ℝ ⊤ (act g⁻¹) := by
-  have h₁ : ContDiff ℝ ⊤ (fun x : SpaceTime d => g⁻¹.R x) := g⁻¹.R.contDiff
-  have h₂ : ContDiff ℝ ⊤ (fun _ : SpaceTime d => g⁻¹.t) := contDiff_const
-  unfold act
-  exact h₁.add h₂
-
-lemma fderiv_linear_add_const (L : SpaceTime d →L[ℝ] SpaceTime d) (c : SpaceTime d)
-    (x : SpaceTime d) : fderiv ℝ (fun y => L y + c) x = fderiv ℝ L x :=
-  fderiv_add_const _
-
-theorem fderiv_act_inv_eq_linear (g : E d) :
-    (fun x => fderiv ℝ (act g⁻¹) x) = fun _ => g⁻¹.R.toContinuousLinearMap := by
-  ext x v i
-  let L := g⁻¹.R.toContinuousLinearMap
-  calc (fderiv ℝ (act g⁻¹) x v) i
-      = (fderiv ℝ (fun y => L y + g⁻¹.t) x v) i := rfl
-    _ = ((fderiv ℝ (fun y => L y + g⁻¹.t) x) v) i := rfl
-    _ = ((fderiv ℝ L x) v) i := by rw [fderiv_linear_add_const]
-    _ = (L v) i := by rw [ContinuousLinearMap.fderiv]
-
-theorem fderiv_has_temperate_growth (g : E d) :
-    Function.HasTemperateGrowth (fun x => fderiv ℝ (act g⁻¹) x) := by
-  rw [fderiv_act_inv_eq_linear g]
-  exact Function.HasTemperateGrowth.const _
-
-theorem act_inv_poly_bound (g : E d) :
-    ∃ k : ℕ, ∃ C : ℝ, ∀ x : SpaceTime d, ‖act g⁻¹ x‖ ≤ C * (1 + ‖x‖) ^ k := by
-  use 1, (1 + ‖g⁻¹.t‖)
-  intro x
-  have : act g⁻¹ x = g⁻¹.R x + g⁻¹.t := by simp [act]
-  rw [this]
-  calc ‖g⁻¹.R x + g⁻¹.t‖
-      ≤ ‖g⁻¹.R x‖ + ‖g⁻¹.t‖ := norm_add_le _ _
-    _ = ‖x‖ + ‖g⁻¹.t‖ := by rw [g⁻¹.R.norm_map x]
-    _ ≤ (1 + ‖g⁻¹.t‖) * (1 + ‖x‖) ^ 1 := by
-        simp only [pow_one]
-        ring_nf
-        have h1 : 0 ≤ ‖x‖ := norm_nonneg x
-        have h2 : 0 ≤ ‖g⁻¹.t‖ := norm_nonneg _
-        linarith [mul_nonneg h2 h1]
-
-/-- The pullback map `x ↦ g⁻¹ • x` has temperate growth (an affine map). -/
-lemma euclidean_pullback_temperate_growth (g : E d) :
-    Function.HasTemperateGrowth (euclidean_pullback g) := by
-  unfold euclidean_pullback
-  obtain ⟨k, C, hbound⟩ := act_inv_poly_bound g
-  exact Function.HasTemperateGrowth.of_fderiv (fderiv_has_temperate_growth g)
-    ((contDiff_act_inv g).differentiable WithTop.top_ne_zero) hbound
-
-/-- The pullback map satisfies the polynomial lower bound needed to precompose Schwartz
-functions: `‖x‖ ≤ C (1 + ‖g⁻¹ • x‖)^k`. -/
-lemma euclidean_pullback_polynomial_bounds (g : E d) :
-    ∃ (k : ℕ) (C : ℝ), ∀ x : SpaceTime d, ‖x‖ ≤ C * (1 + ‖euclidean_pullback g x‖) ^ k := by
-  use 1, (1 + ‖g⁻¹.t‖)
-  intro x
-  simp only [pow_one, euclidean_pullback, act]
-  have h_iso : ‖g⁻¹.R x‖ = ‖x‖ := g⁻¹.R.norm_map x
-  rw [← h_iso]
-  have h_ineq : ‖g⁻¹.R x‖ ≤ ‖g⁻¹.R x + g⁻¹.t‖ + ‖g⁻¹.t‖ := norm_le_add_norm_add _ _
-  calc ‖g⁻¹.R x‖
-      ≤ ‖g⁻¹.R x + g⁻¹.t‖ + ‖g⁻¹.t‖ := h_ineq
-    _ ≤ (1 + ‖g⁻¹.t‖) * (1 + ‖g⁻¹.R x + g⁻¹.t‖) := by
-        have h1 : 0 ≤ ‖g⁻¹.R x + g⁻¹.t‖ := norm_nonneg _
-        have h2 : 0 ≤ ‖g⁻¹.t‖ := norm_nonneg _
-        ring_nf
-        linarith [mul_nonneg h2 h1]
-
-/-- The action of a Euclidean motion on complex test functions by pullback:
-`(g • f)(x) = f(g⁻¹ • x)`. -/
-noncomputable def euclidean_action (g : E d) (f : TestFunctionℂ d) : TestFunctionℂ d :=
-  SchwartzMap.compCLM (𝕜 := ℂ)
-    (hg := euclidean_pullback_temperate_growth g)
-    (hg_upper := euclidean_pullback_polynomial_bounds g) f
 
 /-! ## Time reflection and the Osterwalder–Schrader star operation -/
 
@@ -329,130 +205,7 @@ coordinates. -/
 def timeReflection [Fact (2 ≤ d)] (x : SpaceTime d) : SpaceTime d :=
   (WithLp.equiv 2 _).symm (Function.update x.ofLp 0 (-x.ofLp 0))
 
-/-- Time reflection as a linear map on `ℝ^d`. -/
-def timeReflectionLinear [Fact (2 ≤ d)] : SpaceTime d →ₗ[ℝ] SpaceTime d :=
-  { toFun := timeReflection
-    map_add' := by
-      intro x y
-      apply PiLp.ext
-      intro i
-      simp only [timeReflection, WithLp.equiv_symm_apply]
-      by_cases h : i = 0
-      · subst h
-        simp [Function.update_self]
-        ring
-      · simp [Function.update_of_ne h]
-    map_smul' := by
-      intro c x
-      apply PiLp.ext
-      intro i
-      simp only [timeReflection, RingHom.id_apply, WithLp.equiv_symm_apply]
-      by_cases h : i = 0
-      · subst h
-        simp [Function.update_self]
-      · simp [Function.update_of_ne h] }
-
-/-- Time reflection as a continuous linear map on `ℝ^d`. -/
-noncomputable def timeReflectionCLM [Fact (2 ≤ d)] : SpaceTime d →L[ℝ] SpaceTime d :=
-  timeReflectionLinear.toContinuousLinearMap (E := SpaceTime d) (F' := SpaceTime d)
-
-open InnerProductSpace in
-/-- Time reflection preserves the Euclidean inner product. -/
-lemma timeReflection_inner_map [Fact (2 ≤ d)] (x y : SpaceTime d) :
-    ⟪timeReflection x, timeReflection y⟫_ℝ = ⟪x, y⟫_ℝ := by
-  simp only [inner]
-  congr 1
-  ext i
-  simp only [timeReflection]
-  by_cases h : i = 0
-  · rw [h]; simp
-  · simp [h]
-
-/-- Time reflection is an involution: `Θ ∘ Θ = id`. -/
-@[simp] lemma timeReflection_involutive [Fact (2 ≤ d)] (x : SpaceTime d) :
-    timeReflection (timeReflection x) = x := by
-  apply PiLp.ext
-  intro i
-  simp only [timeReflection, WithLp.equiv_symm_apply]
-  by_cases h : i = 0
-  · subst h
-    simp [Function.update_self]
-  · simp [Function.update_of_ne h]
-
-open InnerProductSpace in
-/-- Time reflection as a linear isometry equivalence of `ℝ^d`. -/
-def timeReflectionLE [Fact (2 ≤ d)] : SpaceTime d ≃ₗᵢ[ℝ] SpaceTime d :=
-  { toFun := timeReflection
-    invFun := timeReflection
-    left_inv := timeReflection_involutive
-    right_inv := timeReflection_involutive
-    map_add' := timeReflectionLinear.map_add'
-    map_smul' := timeReflectionLinear.map_smul'
-    norm_map' := by
-      intro x
-      show ‖timeReflection x‖ = ‖x‖
-      have h : ⟪timeReflection x, timeReflection x⟫_ℝ = ⟪x, x⟫_ℝ := timeReflection_inner_map x x
-      have h1 : ⟪timeReflection x, timeReflection x⟫_ℝ = ‖timeReflection x‖ ^ 2 := by
-        rw [← real_inner_self_eq_norm_sq]
-      have h2 : ⟪x, x⟫_ℝ = ‖x‖ ^ 2 := by
-        rw [← real_inner_self_eq_norm_sq]
-      rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)]
-      rw [← h1, ← h2, h] }
-
-/-- Time reflection has temperate growth (it is a linear isometry). -/
-lemma timeReflection_hasTemperateGrowth [Fact (2 ≤ d)] :
-    Function.HasTemperateGrowth (timeReflection (d := d)) := by
-  have h : timeReflection (d := d) = ⇑(timeReflectionCLM (d := d)) := rfl
-  rw [h]
-  exact ContinuousLinearMap.hasTemperateGrowth (timeReflectionCLM (d := d))
-
-/-- Time reflection is antilipschitz (it is an isometry). -/
-lemma timeReflection_antilipschitz [Fact (2 ≤ d)] :
-    AntilipschitzWith 1 (timeReflection (d := d)) := by
-  have h : timeReflection (d := d) = ⇑(timeReflectionLE (d := d)) := rfl
-  rw [h]
-  exact (timeReflectionLE (d := d)).isometry.antilipschitz
-
-/-- Composition with time reflection, `f ↦ f ∘ Θ`, as a continuous linear map on complex
-test functions. -/
-noncomputable def compTimeReflection [Fact (2 ≤ d)] : TestFunctionℂ d →L[ℝ] TestFunctionℂ d :=
-  SchwartzMap.compCLMOfAntilipschitz ℝ timeReflection_hasTemperateGrowth
-    timeReflection_antilipschitz
-
-lemma starRingEnd_iteratedFDeriv_norm_eq (g : TestFunctionℂ d) (n : ℕ) (x : SpaceTime d) :
-    ‖iteratedFDeriv ℝ n (fun x => starRingEnd ℂ (g x)) x‖ = ‖iteratedFDeriv ℝ n g x‖ := by
-  have h : (fun x => starRingEnd ℂ (g x)) = Complex.conjLIE ∘ g := by
-    ext y
-    rw [Function.comp_apply]
-    exact congr_fun (@RCLike.conjLIE_apply ℂ _) (g y)
-  rw [h]
-  exact LinearIsometryEquiv.norm_iteratedFDeriv_comp_left Complex.conjLIE g x n
-
-/-- The Osterwalder–Schrader star operation on complex test functions: time reflection
-followed by pointwise complex conjugation, `(star f)(x) = conj (f (Θ x))`. -/
-noncomputable def starTestFunction [Fact (2 ≤ d)] (f : TestFunctionℂ d) : TestFunctionℂ d :=
-  let f_reflected := compTimeReflection f
-  ⟨fun x => starRingEnd ℂ (f_reflected x),
-   by
-     apply ContDiff.comp
-     · exact ContinuousLinearMap.contDiff (Complex.conjLIE.toContinuousLinearMap)
-     · exact f_reflected.smooth ⊤,
-   fun k n => by
-     obtain ⟨C, hC⟩ := f_reflected.decay' k n
-     use C
-     intro x
-     have h_eq : ‖iteratedFDeriv ℝ n (fun x => starRingEnd ℂ (f_reflected x)) x‖ =
-         ‖iteratedFDeriv ℝ n f_reflected x‖ :=
-       starRingEnd_iteratedFDeriv_norm_eq f_reflected n x
-     calc ‖x‖ ^ k * ‖iteratedFDeriv ℝ n (fun x => starRingEnd ℂ (f_reflected x)) x‖
-         = ‖x‖ ^ k * ‖iteratedFDeriv ℝ n f_reflected x‖ := by rw [h_eq]
-       _ ≤ C := hC x⟩
-
-/-- The star operation as a `Star` instance on complex test functions. -/
-noncomputable instance instStarTestFunction [Fact (2 ≤ d)] : Star (TestFunctionℂ d) where
-  star f := starTestFunction f
-
-/-! ## Positive-time test functions -/
+/-! ## The positive-time half-space -/
 
 /-- A spacetime point has positive time if its time component is positive. -/
 def HasPositiveTime [Fact (2 ≤ d)] (x : SpaceTime d) : Prop := getTimeComponent x > 0
@@ -460,102 +213,12 @@ def HasPositiveTime [Fact (2 ≤ d)] (x : SpaceTime d) : Prop := getTimeComponen
 /-- The (open) positive-time half-space `{x : x₀ > 0}`. -/
 def positiveTimeSet [Fact (2 ≤ d)] : Set (SpaceTime d) := {x | HasPositiveTime x}
 
-/-- The ℂ-submodule of complex test functions supported in the positive-time half-space. -/
-def PositiveTimeTestFunctionsℂ.submodule [Fact (2 ≤ d)] : Submodule ℂ (TestFunctionℂ d) where
-  carrier := { f : TestFunctionℂ d | tsupport f ⊆ positiveTimeSet }
-  zero_mem' := by
-    simp only [Set.mem_setOf_eq]
-    suffices h : tsupport (0 : TestFunctionℂ d) = ∅ by
-      rw [h]
-      apply Set.empty_subset
-    rw [tsupport_eq_empty_iff]
-    rfl
-  add_mem' := fun {f g} hf hg => Set.Subset.trans (tsupport_add f g) (Set.union_subset hf hg)
-  smul_mem' := by
-    intro c f hf
-    refine (tsupport_smul_subset_right (fun _ : SpaceTime d => c) f).trans hf
-
-/-- Complex test functions supported at positive time (the domain of the OS3 reflection
-positivity form). -/
-abbrev PositiveTimeTestFunctionℂ (d : ℕ) [Fact (2 ≤ d)] : Type :=
-  PositiveTimeTestFunctionsℂ.submodule (d := d)
-
 /-! ## Time translations -/
 
 /-- Time translation on spacetime points: shift the time coordinate by `s`, keep the spatial
 coordinates: `(timeShift s u)₀ = u₀ + s` and `(timeShift s u)ᵢ = uᵢ` for `i ≠ 0`. -/
 def timeShift (s : ℝ) (u : SpaceTime d) : SpaceTime d :=
   WithLp.toLp 2 (fun i => if i.val = 0 then u.ofLp i + s else u.ofLp i)
-
-/-- Time shift preserves the Euclidean distance. -/
-lemma timeShift_dist (s : ℝ) (u v : SpaceTime d) :
-    dist (timeShift s u) (timeShift s v) = dist u v := by
-  simp only [EuclideanSpace.dist_eq, timeShift]
-  congr 1
-  apply Finset.sum_congr rfl
-  intro i _
-  split_ifs with h
-  · congr 1; simp only [Real.dist_eq, add_sub_add_right_eq_sub]
-  · rfl
-
-/-- Time shift is an isometry of `ℝ^d`. -/
-lemma timeShift_isometry (s : ℝ) : Isometry (timeShift (d := d) s) := by
-  rw [isometry_iff_dist_eq]
-  exact fun u v => timeShift_dist s u v
-
-lemma timeShift_antilipschitz (s : ℝ) : AntilipschitzWith 1 (timeShift (d := d) s) :=
-  (timeShift_isometry s).antilipschitz
-
-/-- The constant vector expressing `timeShift` as `id + const`. -/
-def timeShiftConst (s : ℝ) : SpaceTime d :=
-  WithLp.toLp 2 (fun i => if i.val = 0 then s else 0)
-
-lemma timeShift_eq_add_const (s : ℝ) (u : SpaceTime d) :
-    timeShift s u = u + timeShiftConst s := by
-  simp only [timeShift, timeShiftConst]
-  ext i
-  simp only [PiLp.add_apply]
-  split_ifs with h <;> ring
-
-/-- Time shift has temperate growth (it is an affine map). -/
-lemma timeShift_hasTemperateGrowth (s : ℝ) :
-    Function.HasTemperateGrowth (timeShift (d := d) s) := by
-  have h_fderiv_temperate : Function.HasTemperateGrowth (fderiv ℝ (timeShift (d := d) s)) := by
-    have h_eq : fderiv ℝ (timeShift (d := d) s) =
-        fun _ => ContinuousLinearMap.id ℝ (SpaceTime d) := by
-      ext x v
-      have h : timeShift (d := d) s = fun u => u + timeShiftConst s :=
-        funext (timeShift_eq_add_const s)
-      rw [h]
-      simp only [fderiv_add_const, fderiv_fun_id, ContinuousLinearMap.id_apply]
-    rw [h_eq]
-    exact Function.HasTemperateGrowth.const _
-  have h_diff : Differentiable ℝ (timeShift (d := d) s) := by
-    intro x
-    have h : timeShift (d := d) s = fun u => u + timeShiftConst s :=
-      funext (timeShift_eq_add_const s)
-    rw [h]
-    exact differentiableAt_id.add_const _
-  have h_bound : ∀ x : SpaceTime d,
-      ‖timeShift s x‖ ≤ (1 + ‖timeShiftConst (d := d) s‖) * (1 + ‖x‖) ^ 1 := by
-    intro x
-    rw [timeShift_eq_add_const, pow_one]
-    calc ‖x + timeShiftConst s‖
-        ≤ ‖x‖ + ‖timeShiftConst s‖ := norm_add_le _ _
-      _ ≤ (1 + ‖timeShiftConst s‖) * (1 + ‖x‖) := by
-          nlinarith [norm_nonneg x, norm_nonneg (timeShiftConst (d := d) s)]
-  exact Function.HasTemperateGrowth.of_fderiv h_fderiv_temperate h_diff h_bound
-
-/-- Time translation `f ↦ f ∘ (timeShift s)` as a continuous linear map on real test
-functions: `(T_s f)(t, x̄) = f(t + s, x̄)`. -/
-def timeTranslationSchwartzCLM (s : ℝ) : TestFunction d →L[ℝ] TestFunction d :=
-  SchwartzMap.compCLMOfAntilipschitz ℝ (timeShift_hasTemperateGrowth s)
-    (timeShift_antilipschitz s)
-
-/-- Time translation on tempered distributions, by duality:
-`⟨T_s ω, f⟩ = ⟨ω, T_{−s} f⟩`. -/
-def timeTranslationDistribution (s : ℝ) (ω : FieldConfiguration d) : FieldConfiguration d :=
-  ω.comp (timeTranslationSchwartzCLM (-s))
 
 /-! ## The Osterwalder–Schrader axioms -/
 
@@ -568,9 +231,21 @@ def OS0_Analyticity (dμ_config : ProbabilityMeasure (FieldConfiguration d)) : P
       GJGeneratingFunctionalℂ dμ_config (∑ i, z i • J i)) Set.univ
 
 /-- Local integrability of the pointwise two-point function, the additional condition OS1
-imposes in the borderline case `p = 2`. -/
+imposes in the borderline case `p = 2`. The pointwise two-point function `S₂(x)` is the
+mollifier limit of smeared covariances `S₂(φₙ(· − x), φₙ)` along the standard bump sequence,
+regularized to `0` at the coincident point `x = 0` (where the two-point function of a
+quantum field diverges). As explained at the top of the file, the translated mollifier
+`φₙ(· − x)` is characterised pointwise by the quantified family `smear`; the theorem's
+`TranslationExists` clause guarantees it exists. -/
 def TwoPointIntegrable (dμ_config : ProbabilityMeasure (FieldConfiguration d)) : Prop :=
-  LocallyIntegrable (fun x => SchwingerTwoPointFunction dμ_config x) volume
+  ∀ smear : ContDiffBump (0 : SpaceTime d) → SpaceTime d → TestFunction d,
+    (∀ φ x y, smear φ x y = bumpToSchwartz φ (y - x)) →
+    LocallyIntegrable (fun x : SpaceTime d =>
+      if x = 0 then 0
+      else Filter.limUnder Filter.atTop
+        (fun n : ℕ => if hn : n = 0 then 0
+          else SchwingerFunction₂ dμ_config (smear (standardBumpSequence n hn) x)
+            (bumpToSchwartz (standardBumpSequence n hn)))) volume
 
 /-- **OS1 (Regularity):** the generating functional satisfies an exponential bound
 `‖Z[f]‖ ≤ exp (c (‖f‖₁ + ‖f‖ₚᵖ))` for some `1 ≤ p ≤ 2` and `c > 0`; when `p = 2`, the
@@ -582,49 +257,101 @@ def OS1_Regularity (dμ_config : ProbabilityMeasure (FieldConfiguration d)) : Pr
         Real.exp (c * (∫ x, ‖f x‖ ∂volume + ∫ x, ‖f x‖ ^ p ∂volume))) ∧
     (p = 2 → TwoPointIntegrable dμ_config)
 
-/-- **OS2 (Euclidean invariance):** the generating functional is invariant under the pullback
-action of every Euclidean motion. -/
+/-- **OS2 (Euclidean invariance):** the generating functional is invariant under every
+Euclidean motion `x ↦ R x + b` of `ℝ^d`.
+
+The motion acts on test functions by pullback, `(g · f)(x) = f (g⁻¹ x) = f (R⁻¹ (x − b))`.
+As explained at the top of the file, the pullback is characterised pointwise: the axiom
+quantifies over any test function `f'` with `f' x = f (R⁻¹ (x − b))`, and the theorem's
+`EuclideanPullbackExists` clause guarantees such `f'` exist. -/
 def OS2_EuclideanInvariance (dμ_config : ProbabilityMeasure (FieldConfiguration d)) : Prop :=
-  ∀ (g : E d) (f : TestFunctionℂ d),
-    GJGeneratingFunctionalℂ dμ_config f =
-    GJGeneratingFunctionalℂ dμ_config (euclidean_action g f)
+  ∀ (R : SpaceTime d ≃ₗᵢ[ℝ] SpaceTime d) (b : SpaceTime d) (f f' : TestFunctionℂ d),
+    (∀ x, f' x = f (R.symm (x - b))) →
+    GJGeneratingFunctionalℂ dμ_config f = GJGeneratingFunctionalℂ dμ_config f'
+
+/-- Every Euclidean motion really does pull test functions back to test functions, so the
+hypothesis of `OS2_EuclideanInvariance` is satisfiable and the axiom has its full force. -/
+def EuclideanPullbackExists (d : ℕ) : Prop :=
+  ∀ (R : SpaceTime d ≃ₗᵢ[ℝ] SpaceTime d) (b : SpaceTime d) (f : TestFunctionℂ d),
+    ∃ f' : TestFunctionℂ d, ∀ x, f' x = f (R.symm (x - b))
 
 /-- **OS3 (Reflection positivity):** the generating functional defines a positive
 semi-definite Hermitian form on test functions supported at positive time. This is the
-complex (star) formulation of Osterwalder–Schrader (1975, axiom E2): for all positive-time
-complex test functions `f₁, …, fₙ` and coefficients `c₁, …, cₙ ∈ ℂ`,
-`∑ᵢⱼ c̄ᵢ cⱼ Z[fᵢ − fⱼ*] ≥ 0`, where `(f*)(x) = conj (f (Θ x))` combines time reflection
-with complex conjugation. -/
+complex (star) formulation of Osterwalder–Schrader (1975, axiom E2): for all complex test
+functions `f₁, …, fₙ` supported in the positive-time half-space and coefficients
+`c₁, …, cₙ ∈ ℂ`, `∑ᵢⱼ c̄ᵢ cⱼ Z[fᵢ − fⱼ*] ≥ 0`, where `(f*)(x) = conj (f (Θ x))` combines
+time reflection with complex conjugation.
+
+The support restriction is a plain hypothesis, `tsupport (f i) ⊆ positiveTimeSet`. As
+explained at the top of the file, the star is characterised pointwise: the axiom quantifies
+over any test functions `fstar j` with `fstar j x = conj (f j (Θ x))`, and the theorem's
+`TimeReflectionStarExists` clause guarantees they exist. -/
 def OS3_ReflectionPositivity [Fact (2 ≤ d)]
     (dμ_config : ProbabilityMeasure (FieldConfiguration d)) : Prop :=
-  ∀ (n : ℕ) (f : Fin n → PositiveTimeTestFunctionℂ d) (c : Fin n → ℂ),
+  ∀ (n : ℕ) (f : Fin n → TestFunctionℂ d) (fstar : Fin n → TestFunctionℂ d)
+    (c : Fin n → ℂ),
+    (∀ i, tsupport (f i) ⊆ positiveTimeSet) →
+    (∀ j x, fstar j x = starRingEnd ℂ (f j (timeReflection x))) →
     0 ≤ (∑ i, ∑ j, starRingEnd ℂ (c i) * c j *
       GJGeneratingFunctionalℂ dμ_config
-        ((f i).val - star ((f j).val))).re
+        (f i - fstar j)).re
+
+/-- The Osterwalder–Schrader star `(f*)(x) = conj (f (Θ x))` of a test function is again a
+test function, so the hypothesis of `OS3_ReflectionPositivity` is satisfiable and the axiom
+has its full force. -/
+def TimeReflectionStarExists (d : ℕ) [Fact (2 ≤ d)] : Prop :=
+  ∀ f : TestFunctionℂ d, ∃ f' : TestFunctionℂ d,
+    ∀ x, f' x = starRingEnd ℂ (f (timeReflection x))
 
 /-- **OS4 (Clustering):** correlations of distant regions decay:
 `Z[f + T_a g] → Z[f] Z[g]` as the translation `‖a‖ → ∞`, so that widely separated test
-functions become statistically independent. -/
+functions become statistically independent. As explained at the top of the file, the
+translate `(T_a g)(x) = g(x − a)` is characterised pointwise by the quantified `g'`; the
+theorem's `TranslationExists` clause guarantees it exists. -/
 def OS4_Clustering (dμ_config : ProbabilityMeasure (FieldConfiguration d)) : Prop :=
-  ∀ (f g : TestFunction d) (ε : ℝ), ε > 0 → ∃ (R : ℝ), R > 0 ∧ ∀ (a : SpaceTime d),
-    ‖a‖ > R →
-    ‖GJGeneratingFunctional dμ_config (f + translateSchwartz g a) -
-     GJGeneratingFunctional dμ_config f * GJGeneratingFunctional dμ_config g‖ < ε
+  ∀ (f g : TestFunction d) (ε : ℝ), ε > 0 → ∃ (R : ℝ), R > 0 ∧
+    ∀ (a : SpaceTime d) (g' : TestFunction d), ‖a‖ > R →
+      (∀ x, g' x = g (x - a)) →
+      ‖GJGeneratingFunctional dμ_config (f + g') -
+       GJGeneratingFunctional dμ_config f * GJGeneratingFunctional dμ_config g‖ < ε
+
+/-- Translation really does carry test functions to test functions, so the hypotheses of
+`OS4_Clustering` and `TwoPointIntegrable` are satisfiable and those statements have their
+full force. -/
+def TranslationExists (d : ℕ) : Prop :=
+  ∀ (g : TestFunction d) (a : SpaceTime d), ∃ g' : TestFunction d, ∀ x, g' x = g (x - a)
 
 /-- **OS4 (Ergodicity):** for observables `A(ω) = ∑ⱼ zⱼ e^{⟨ω, fⱼ⟩}`, the time average
-`(1/T) ∫₀ᵀ A(T_s ω) ds` converges to the expectation `𝔼_μ[A]` in `L²(μ)` as `T → ∞`. -/
+`(1/T) ∫₀ᵀ A(T_s ω) ds` converges to the expectation `𝔼_μ[A]` in `L²(μ)` as `T → ∞`.
+
+The translated distribution acts by `⟨T_s ω, g⟩ = ⟨ω, g ∘ timeShift (−s)⟩`. As explained at
+the top of the file, the time translate is characterised pointwise by the quantified family
+`translate`, and the translated observable is written through the real/imaginary
+decomposition of the pairing; the theorem's `TimeTranslationExists` clause guarantees the
+translates exist. -/
 def OS4_Ergodicity (dμ_config : ProbabilityMeasure (FieldConfiguration d)) : Prop :=
-  ∀ (n : ℕ) (z : Fin n → ℂ) (f : Fin n → TestFunctionℂ d),
+  ∀ (translate : ℝ → TestFunction d → TestFunction d),
+    (∀ (s : ℝ) (g : TestFunction d) (x : SpaceTime d), translate s g x = g (timeShift s x)) →
+    ∀ (n : ℕ) (z : Fin n → ℂ) (f : Fin n → TestFunctionℂ d),
     let μ := dμ_config.toMeasure
     let A : FieldConfiguration d → ℂ := fun ω =>
       ∑ j, z j * Complex.exp (distributionPairingℂ_real ω (f j))
+    let Ashift : ℝ → FieldConfiguration d → ℂ := fun s ω =>
+      ∑ j, z j * Complex.exp
+        ((ω (translate (-s) (complex_testfunction_decompose (f j)).1) : ℂ) +
+          Complex.I * (ω (translate (-s) (complex_testfunction_decompose (f j)).2) : ℂ))
     Filter.Tendsto
       (fun T : ℝ =>
         ∫ ω, ‖(1 / T) * ∫ s in Set.Icc (0 : ℝ) T,
-          A (timeTranslationDistribution s ω)
+          Ashift s ω
           - ∫ ω', A ω' ∂μ‖ ^ 2 ∂μ)
       Filter.atTop
       (nhds 0)
+
+/-- Time translation really does carry test functions to test functions, so the hypothesis
+of `OS4_Ergodicity` is satisfiable and the axiom has its full force. -/
+def TimeTranslationExists (d : ℕ) : Prop :=
+  ∀ (s : ℝ) (g : TestFunction d), ∃ g' : TestFunction d, ∀ x, g' x = g (timeShift s x)
 
 /-! ## The theorem -/
 
@@ -635,7 +362,12 @@ distributions `S'(ℝ^d)` — the free (massive) Gaussian Free Field — such th
 * `μ` is uniquely characterized by its generating functional
   `Z[f] = exp (−½ ⟨f, C f⟩)`, where `C = (−Δ + m²)⁻¹` is the free covariance in its
   proper-time form (this clause pins `μ` down: a Gaussian measure is determined by its
-  characteristic functional); and
+  characteristic functional);
+* every Euclidean motion pulls test functions back to test functions
+  (`EuclideanPullbackExists`), every test function has an Osterwalder–Schrader star
+  (`TimeReflectionStarExists`), and time translation and spacetime translation carry test
+  functions to test functions (`TimeTranslationExists`, `TranslationExists`), so none of
+  the axioms below holds vacuously; and
 * `μ` satisfies the five Osterwalder–Schrader axioms: OS0 (analyticity), OS1 (regularity),
   OS2 (Euclidean invariance), OS3 (reflection positivity, complex star formulation), and
   OS4 (both clustering and ergodicity).
@@ -647,6 +379,8 @@ theorem gaussianFreeField_satisfies_OS_axioms (d : ℕ) [Fact (2 ≤ d)] (m : �
       (∀ f : TestFunction d,
         GJGeneratingFunctional μ f =
           Complex.exp (-(1 / 2 : ℂ) * ((covarianceForm d m f f : ℝ) : ℂ))) ∧
+      EuclideanPullbackExists d ∧ TimeReflectionStarExists d ∧ TimeTranslationExists d ∧
+      TranslationExists d ∧
       OS0_Analyticity μ ∧ OS1_Regularity μ ∧ OS2_EuclideanInvariance μ ∧
       OS3_ReflectionPositivity μ ∧ OS4_Clustering μ ∧ OS4_Ergodicity μ := sorry
 

@@ -115,7 +115,10 @@ status:
     distributions S'(R^d), characterized uniquely by its Gaussian generating functional
     with the proper-time free covariance, satisfying all five Osterwalder-Schrader axioms
     (OS0 analyticity, OS1 regularity, OS2 Euclidean invariance, OS3 reflection
-    positivity, OS4 clustering + ergodicity). The substantive development — the
+    positivity, OS4 clustering + ergodicity), together with four existence clauses
+    guaranteeing that the transformed test functions the axioms quantify over — Euclidean
+    pullbacks, OS stars, translates, time translates — exist, so no axiom holds
+    vacuously (see `fidelity`). The substantive development — the
     dimension-generic construction via the Minlos theorem, the OS proofs, and the
     concrete propagator instances at d = 2, 3, 4, 5 — lives in mrdouglasny/OSforGFF at
     the pinned commit; its formalization.yaml there documents the library's own scope
@@ -179,7 +182,16 @@ fidelity:
     (heat-kernel) integral of the free covariance — the characterization clause pins the
     measure uniquely (bare existence would be satisfied by the Dirac measure at 0) — and
     which satisfies the five restated OS predicates; the dimension hypothesis 2 <= d is
-    carried as a Fact instance binder.
+    carried as a Fact instance binder. The transformed test functions the axioms mention —
+    the Euclidean pullback (OS2), the Osterwalder-Schrader star (OS3), the translates of
+    clustering and of the OS1 mollifier smearing, and the time translate of ergodicity
+    (OS4) — are characterised pointwise rather than constructed as Schwartz maps: each
+    axiom quantifies over any test function with the required values, and four existence
+    conjuncts of the theorem (EuclideanPullbackExists, TimeReflectionStarExists,
+    TimeTranslationExists, TranslationExists) assert that such test functions exist, so no
+    axiom holds vacuously. StatementEquivalence.lean (repository root; not a lake target)
+    machine-checks that this characterised statement is equivalent to the fully-constructed
+    formulation. See docs/challenge.md for the design and the full dictionary.
   axiom_footprint: >
     The Solution theorem depends on exactly Lean's three foundational axioms (propext,
     Classical.choice, Quot.sound), enforced by comparator.json's permitted_axioms. The

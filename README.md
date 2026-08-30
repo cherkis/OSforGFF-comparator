@@ -20,18 +20,25 @@ development, pinned to an exact commit, in `formalization.yaml`.
 The Challenge may not import OSforGFF, or anything else project-specific, anywhere in its
 transitive import closure. So it restates from scratch, in Mathlib's vocabulary, everything the
 theorem needs: spacetime and Schwartz test functions, field configurations as tempered
-distributions, the generating functional, the free covariance in its proper-time form, the
-Euclidean group and its action, time reflection and the OS star operation, positive-time test
-functions, and the five OS predicates. Comparator then checks that the Solution really does
-discharge that statement, and that the proof rests on nothing beyond Lean's three core axioms.
+distributions, the generating functional, the free covariance in its proper-time form, time
+reflection and the positive-time half-space, the mollifier bumps, and the five OS predicates.
+The transformed test functions the axioms mention — Euclidean pullbacks, OS stars, translates,
+time translates — are characterised pointwise rather than constructed as Schwartz maps, with
+four existence conjuncts in the theorem keeping every axiom non-vacuous. Comparator then checks
+that the Solution really does discharge that statement, and that the proof rests on nothing
+beyond Lean's three core axioms.
 
 That constraint is the point. The audit surface is written in a vocabulary the reader already
 trusts, and none of it is taken on the library's word.
 
 The design choices behind the restatement — why existential + characterization, why the
-proper-time covariance — and the full dictionary between the Challenge's self-contained
-definitions and the library's originals are laid out in
-[docs/challenge.md](docs/challenge.md).
+proper-time covariance, why characterised transforms — and the full dictionary between the
+Challenge's self-contained definitions and the library's originals are laid out in
+[docs/challenge.md](docs/challenge.md). The equivalence of the characterised statement with
+the earlier fully-constructed formulation is itself machine-checked:
+`StatementEquivalence.lean` on the
+[`statement-equivalence`](https://github.com/mrdouglasny/OSforGFF-comparator/tree/statement-equivalence)
+branch proves the two full theorem statements equivalent, every bridge definitional.
 
 ## Verifying
 

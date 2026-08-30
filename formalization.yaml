@@ -189,9 +189,10 @@ fidelity:
     axiom quantifies over any test function with the required values, and four existence
     conjuncts of the theorem (EuclideanPullbackExists, TimeReflectionStarExists,
     TimeTranslationExists, TranslationExists) assert that such test functions exist, so no
-    axiom holds vacuously. StatementEquivalence.lean (repository root; not a lake target)
-    machine-checks that this characterised statement is equivalent to the fully-constructed
-    formulation. See docs/challenge.md for the design and the full dictionary.
+    axiom holds vacuously. StatementEquivalence.lean, on the statement-equivalence branch
+    of this repository, machine-checks that this characterised statement is equivalent to
+    the earlier fully-constructed formulation. See docs/challenge.md for the design and
+    the full dictionary.
   axiom_footprint: >
     The Solution theorem depends on exactly Lean's three foundational axioms (propext,
     Classical.choice, Quot.sound), enforced by comparator.json's permitted_axioms. The

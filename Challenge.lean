@@ -41,8 +41,10 @@ simply quantifies over any test function with the required values, as in "for ev
 with `f' x = f (g⁻¹ x)`, …". Two test functions with the same values are equal, so this
 states the same axiom — provided such `f'` exist at all. The four `…Exists` clauses of the
 theorem (`EuclideanPullbackExists`, `TimeReflectionStarExists`, `TimeTranslationExists`,
-`TranslationExists`) assert precisely that existence, so no axiom can hold vacuously. The
-single `sorry` is the theorem to be proved.
+`TranslationExists`) assert precisely that existence, so no axiom can hold vacuously.
+Likewise, OS1's two-point condition quantifies its limit explicitly: the mollified
+two-point functions must *converge* to some locally integrable `K`, rather than a totalized
+limit operator being applied to them. The single `sorry` is the theorem to be proved.
 
 The formulation of the axioms follows Glimm–Jaffe, *Quantum Physics: A Functional Integral
 Point of View* (Springer, 1987), ch. 6, stated for probability measures on `S'(ℝ^d)`; OS3 is
@@ -230,26 +232,34 @@ def OS0_Analyticity (dμ_config : ProbabilityMeasure (FieldConfiguration d)) : P
     AnalyticOn ℂ (fun z : Fin n → ℂ =>
       GJGeneratingFunctionalℂ dμ_config (∑ i, z i • J i)) Set.univ
 
-/-- Local integrability of the pointwise two-point function, the additional condition OS1
-imposes in the borderline case `p = 2`. The pointwise two-point function `S₂(x)` is the
-mollifier limit of smeared covariances `S₂(φₙ(· − x), φₙ)` along the standard bump sequence,
-regularized to `0` at the coincident point `x = 0` (where the two-point function of a
-quantum field diverges). As explained at the top of the file, the translated mollifier
-`φₙ(· − x)` is characterised pointwise by the quantified family `smear`; the theorem's
-`TranslationExists` clause guarantees it exists. -/
+/-- The additional condition OS1 imposes in the borderline case `p = 2`: along the standard
+mollifier sequence, the smeared covariances `S₂(φₙ(· − x), φₙ)` converge, at every
+non-coincident point `x ≠ 0`, to an explicitly quantified limit `K x`, and the limit
+function `K` is locally integrable. No convergence is demanded at the coincident point
+`x = 0` (a Lebesgue-null set, where the two-point function of a quantum field diverges), so
+`K 0` is unconstrained. The limit is quantified explicitly — the convergence of the
+mollified two-point functions is part of the condition. As explained at the top of the
+file, the translated mollifier `φₙ(· − x)` is characterised pointwise by the quantified
+family `smear`; the theorem's `TranslationExists` clause guarantees it exists. -/
 def TwoPointIntegrable (dμ_config : ProbabilityMeasure (FieldConfiguration d)) : Prop :=
   ∀ smear : ContDiffBump (0 : SpaceTime d) → SpaceTime d → TestFunction d,
     (∀ φ x y, smear φ x y = bumpToSchwartz φ (y - x)) →
-    LocallyIntegrable (fun x : SpaceTime d =>
-      if x = 0 then 0
-      else Filter.limUnder Filter.atTop
-        (fun n : ℕ => if hn : n = 0 then 0
-          else SchwingerFunction₂ dμ_config (smear (standardBumpSequence n hn) x)
-            (bumpToSchwartz (standardBumpSequence n hn)))) volume
+    ∃ K : SpaceTime d → ℝ, LocallyIntegrable K volume ∧
+      ∀ x : SpaceTime d, x ≠ 0 →
+        Filter.Tendsto
+          (fun n : ℕ => SchwingerFunction₂ dμ_config (smear (standardMollifier n) x)
+            (bumpToSchwartz (standardMollifier n)))
+          Filter.atTop (nhds (K x))
+where
+  /-- The `n`-th standard mollifier: the `(n+1)`-st standard bump, re-indexed so the
+      family is total in `n`. -/
+  standardMollifier (n : ℕ) : ContDiffBump (0 : SpaceTime d) :=
+    standardBumpSequence (n + 1) (Nat.succ_ne_zero n)
 
 /-- **OS1 (Regularity):** the generating functional satisfies an exponential bound
 `‖Z[f]‖ ≤ exp (c (‖f‖₁ + ‖f‖ₚᵖ))` for some `1 ≤ p ≤ 2` and `c > 0`; when `p = 2`, the
-two-point function is additionally required to be locally integrable. -/
+mollified two-point functions are additionally required to converge to a locally
+integrable limit (`TwoPointIntegrable`). -/
 def OS1_Regularity (dμ_config : ProbabilityMeasure (FieldConfiguration d)) : Prop :=
   ∃ (p : ℝ) (c : ℝ), 1 ≤ p ∧ p ≤ 2 ∧ c > 0 ∧
     (∀ (f : TestFunctionℂ d),

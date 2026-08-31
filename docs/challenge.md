@@ -65,20 +65,33 @@ exhibiting the library's constructed transform as the witness. The characterised
 is therefore **strictly stronger, conjunct by conjunct**, than the fully-constructed
 formulation it replaced.
 
-That equivalence is itself machine-checked: `StatementEquivalence.lean`, on the
+That equivalence is itself machine-checked for the previous revision of the Challenge:
+`StatementEquivalence.lean`, on the
 [`statement-equivalence`](https://github.com/mrdouglasny/OSforGFF-comparator/tree/statement-equivalence)
 branch of this repository, reproduces the earlier fully-constructed formulation verbatim
 under `Challenge.Orig`, verifies the shared foundation is byte-identical, and proves the
 two full `∃ μ` theorem statements equivalent for every `d ≥ 2` and mass — per-axiom iffs
 plus the existence conjuncts, all bridges definitional. It is a verification artifact, not
 part of the registry pair (it plays no role in the Comparator run), which is why it lives
-on its own branch; check it there with `lake env lean StatementEquivalence.lean`.
+on its own branch; check it there with `lake env lean StatementEquivalence.lean`. The
+current revision then **strictly strengthened** OS1's two-point clause
+(`TwoPointIntegrable` now demands the convergence of the mollified two-point functions to
+an explicitly quantified locally integrable limit, where both earlier formulations applied
+`LocallyIntegrable` to a totalized `Filter.limUnder`); the strengthened clause implies the
+recorded one, machine-checked in the library as
+`TwoPointIntegrable.schwingerTwoPointFunction_locallyIntegrable`, so the certified
+equivalence dates the recorded pair, and the current Challenge is stronger still.
 
 One transform family stays constructed: the mollifier bumps
-`bumpToSchwartz`/`standardBumpSequence` used by OS1's two-point regularity. Quantifying
-over arbitrary mollifier families would genuinely change the statement's strength — the
-library's convergence engine is stated for `ContDiffBump` sequences — so the bumps are the
-correct load-bearing data, not removable apparatus.
+`bumpToSchwartz`/`standardBumpSequence` used by OS1's two-point regularity (with
+`standardMollifier`, a `where`-scoped re-indexing making the family total in `n`).
+Quantifying over arbitrary mollifier families would genuinely change the statement's
+strength — the library's convergence engine is stated for `ContDiffBump` sequences — so the
+bumps are the correct load-bearing data, not removable apparatus. The *limit* of the
+mollified two-point functions, by contrast, is quantified: `TwoPointIntegrable` demands an
+explicit locally integrable `K` to which the smeared covariances converge away from the
+coincident point, rather than applying a totalized limit operator (whose junk default
+would otherwise let the clause hold without any convergence).
 
 **Hypotheses.** `2 ≤ d` is carried as a `Fact` instance because the positive-time apparatus
 of OS3 (the time coordinate `x₀`) consumes it through instances; `0 < m` is a plain
@@ -99,8 +112,9 @@ functions is defined.
 - `scripts/check-pair.sh` — additionally gates the pair at source level (no axioms or
   escape hatches; exactly one `sorry`, in `Challenge.lean`).
 - on branch `statement-equivalence`: `lake env lean StatementEquivalence.lean` — checks
-  the equivalence of the characterised statement with the fully-constructed formulation
-  (see above).
+  the equivalence of the previous revision's characterised statement with the
+  fully-constructed formulation (see above; the current revision strengthens OS1's
+  two-point clause beyond both).
 
 ## Dictionary
 
@@ -147,11 +161,14 @@ original lives in an external dependency; it is copied verbatim so that the Chal
 |---|---|---|
 | `SchwingerFunction`, `SchwingerFunction₂` | same | `OSforGFF/Schwinger/Defs.lean` |
 | `bumpToSchwartz`, `standardBumpSequence` | same | `OSforGFF/Schwinger/TwoPoint.lean` |
+| `TwoPointIntegrable.standardMollifier` (`where`-scoped) | same | `OSforGFF/OS/Axioms.lean` |
 | translated mollifier `φₙ(· − x)` | *characterised* in `TwoPointIntegrable`; witness `SchwartzMap.translate` | `OSforGFF/General/FunctionalAnalysis.lean` |
 
 The library's smearing chain (`translateSchwartz`, `SmearedTwoPointFunction`,
 `SchwingerTwoPointFunction`) does not appear in the Challenge: `TwoPointIntegrable` inlines
-the mollifier limit, quantifying over any `smear` family with the translate's pointwise
+the convergence statement itself — the smeared covariances along the standard mollifiers
+must converge, away from the coincident point, to an explicitly quantified locally
+integrable limit — quantifying over any `smear` family with the translate's pointwise
 values.
 
 ### Euclidean motions (OS2)
@@ -229,5 +246,7 @@ complex star formulation (Osterwalder–Schrader 1975, axiom E2); OS4 is split i
 clustering and ergodicity. The Challenge restates these verbatim, adding only the
 existential packaging and the pointwise characterisation of the transformed test functions
 described above — with the four existence conjuncts keeping the characterised axioms
-non-vacuous, and `StatementEquivalence.lean` certifying the equivalence with the
-fully-constructed formulation.
+non-vacuous, OS1's two-point clause demanding its limit explicitly, and
+`StatementEquivalence.lean` certifying the equivalence of the previous revision with the
+fully-constructed formulation (the current revision strictly strengthens OS1's two-point
+clause; the library proves new ⇒ old).

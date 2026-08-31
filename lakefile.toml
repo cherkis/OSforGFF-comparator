@@ -18,3 +18,12 @@ roots = ["Challenge"]
 [[lean_lib]]
 name = "Solution"
 roots = ["Solution"]
+
+# The machine-checked equivalence of the constructed and characterised statements.
+# Deliberately NOT a default target. This is a one-shot argument, not a living invariant:
+# it imports only Challenge (hence Mathlib) and never touches OSforGFF, so no library
+# change or re-pin can affect it. Build it on demand with `lake build StatementEquivalence`
+# when the Challenge or the toolchain moves — that is, when the comparison is redone.
+[[lean_lib]]
+name = "StatementEquivalence"
+roots = ["StatementEquivalence"]

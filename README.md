@@ -10,6 +10,11 @@ the [Palomar Registry](https://palomar-registry.org) policy: it exposes the libr
 to [Comparator](https://github.com/leanprover/comparator) and names the substantive
 development, pinned to an exact commit, in `formalization.yaml`.
 
+**Registered:** the result is registry entry
+[`PALOMAR-2026-08-31-000012`](https://data.palomar-registry.org/entries/PALOMAR-2026-08-31-000012-v1.json)
+(v1, registered 2026-08-31 at commit `6e56a6f`, after mechanical verification and a clean
+automated editorial review).
+
 ## The two files that matter
 
 | file | what it is |

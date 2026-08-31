@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, statement-equivalence]
+    branches: [main]
   pull_request:
   schedule:
     # Canary: the pin is frozen, but OSforGFF main moves. Catch drift within a day.

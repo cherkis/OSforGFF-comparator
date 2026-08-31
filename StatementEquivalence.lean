@@ -32,6 +32,21 @@ This file is a verification artifact, not part of the registry pair. It lives on
 `lake env lean StatementEquivalence.lean` after `lake build`.
 -/
 
+/-!
+## Verification provenance
+
+Verified 2026-08-30 against `Challenge.lean` at this commit, toolchain
+`leanprover/lean4:v4.33.0-rc1`:
+
+* `lake build StatementEquivalence` — compiles, no `sorry`;
+* `#print axioms Challenge.statements_equiv` — `[propext, Classical.choice, Quot.sound]`,
+  so the equivalence does not depend on the Challenge's own challenge hole.
+
+This file imports only `Challenge`, and so only Mathlib; it never touches OSforGFF. No
+library change or re-pin can affect it, and it is not a default build target. Re-verify
+when the Challenge statement or the toolchain moves.
+-/
+
 namespace Challenge
 
 namespace Orig

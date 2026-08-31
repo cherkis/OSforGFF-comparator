@@ -73,7 +73,8 @@ under `Challenge.Orig`, verifies the shared foundation is byte-identical, and pr
 two full `∃ μ` theorem statements equivalent for every `d ≥ 2` and mass — per-axiom iffs
 plus the existence conjuncts, all bridges definitional. It is a verification artifact, not
 part of the registry pair (it plays no role in the Comparator run), which is why it lives
-on its own branch; check it there with `lake env lean StatementEquivalence.lean`. The
+on its own branch; check it there with `lake build StatementEquivalence` (a non-default
+lakefile target on that branch; `lake env lean StatementEquivalence.lean` works too). The
 current revision then **strictly strengthened** OS1's two-point clause
 (`TwoPointIntegrable` now demands the convergence of the mollified two-point functions to
 an explicitly quantified locally integrable limit, where both earlier formulations applied
@@ -111,7 +112,8 @@ functions is defined.
   with `./scripts/verify-comparator.sh`.
 - `scripts/check-pair.sh` — additionally gates the pair at source level (no axioms or
   escape hatches; exactly one `sorry`, in `Challenge.lean`).
-- on branch `statement-equivalence`: `lake env lean StatementEquivalence.lean` — checks
+- on branch `statement-equivalence`: `lake build StatementEquivalence` (non-default
+  target; `lake env lean StatementEquivalence.lean` also works) — checks
   the equivalence of the previous revision's characterised statement with the
   fully-constructed formulation (see above; the current revision strengthens OS1's
   two-point clause beyond both).

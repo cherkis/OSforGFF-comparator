@@ -1,6 +1,6 @@
 name = "OSforGFFComparator"
 version = "0.1.0"
-defaultTargets = ["Challenge", "Solution"]
+defaultTargets = ["Challenge", "Solution", "StatementEquivalence"]
 
 # The substantive development. Mathlib reaches the workspace through it, which is
 # what lets Challenge.lean import Mathlib while importing no project source.
@@ -18,3 +18,10 @@ roots = ["Challenge"]
 [[lean_lib]]
 name = "Solution"
 roots = ["Solution"]
+
+# The machine-checked equivalence of the constructed and characterised statements.
+# A default target so `lake build` covers it: the README cites it as evidence, and an
+# unbuilt proof rots the first time a definition moves.
+[[lean_lib]]
+name = "StatementEquivalence"
+roots = ["StatementEquivalence"]

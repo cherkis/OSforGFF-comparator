@@ -36,8 +36,10 @@ project:
     reference Gaussian and the invariant measure of the free dynamics in every dimension
     treated. And for researchers formalizing quantum field theory in various dimensions,
     this is, to our knowledge, the first machine-checked verification of the
-    Osterwalder-Schrader axioms, with the dimension-generic propagator typeclass as the
-    designed extension point for further covariances and dimensions.
+    Osterwalder-Schrader axioms — the literature search supporting that statement (scope,
+    terms, dates, and the related-but-distinct work found) is documented in
+    docs/novelty.md of this repository — with the dimension-generic propagator typeclass
+    as the designed extension point for further covariances and dimensions.
   authors:
     - "Sergey A. Cherkis"
     - "Michael R. Douglas"
@@ -194,10 +196,16 @@ fidelity:
     axiom quantifies over any test function with the required values, and four existence
     conjuncts of the theorem (EuclideanPullbackExists, TimeReflectionStarExists,
     TimeTranslationExists, TranslationExists) assert that such test functions exist, so no
-    axiom holds vacuously. StatementEquivalence.lean, on the statement-equivalence branch
-    of this repository, machine-checks that this characterised statement is equivalent to
-    the earlier fully-constructed formulation. See docs/challenge.md for the design and
-    the full dictionary.
+    axiom holds vacuously. OS1's two-point clause (TwoPointIntegrable) likewise quantifies
+    its limit explicitly: the mollified two-point functions must converge, away from the
+    coincident point, to a locally integrable limit — convergence is part of the
+    condition, not delegated to a totalized limit operator. StatementEquivalence.lean, on
+    the statement-equivalence branch of this repository, machine-checks that the previous
+    revision's characterised statement is equivalent to the earlier fully-constructed
+    formulation; the current revision strictly strengthens the OS1 two-point clause beyond
+    both, and the library proves the strengthened clause implies the recorded one
+    (TwoPointIntegrable.schwingerTwoPointFunction_locallyIntegrable). See
+    docs/challenge.md for the design and the full dictionary.
   axiom_footprint: >
     The Solution theorem depends on exactly Lean's three foundational axioms (propext,
     Classical.choice, Quot.sound), enforced by comparator.json's permitted_axioms. The

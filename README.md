@@ -34,11 +34,15 @@ trusts, and none of it is taken on the library's word.
 The design choices behind the restatement — why existential + characterization, why the
 proper-time covariance, why characterised transforms — and the full dictionary between the
 Challenge's self-contained definitions and the library's originals are laid out in
-[docs/challenge.md](docs/challenge.md). The equivalence of the characterised statement with
-the earlier fully-constructed formulation is itself machine-checked:
-`StatementEquivalence.lean` on the
+[docs/challenge.md](docs/challenge.md). The equivalence of the previous revision's
+characterised statement with the earlier fully-constructed formulation is itself
+machine-checked: `StatementEquivalence.lean` on the
 [`statement-equivalence`](https://github.com/mrdouglasny/OSforGFF-comparator/tree/statement-equivalence)
-branch proves the two full theorem statements equivalent, every bridge definitional.
+branch proves those two full theorem statements equivalent, every bridge definitional. The
+current revision strictly strengthens OS1's two-point clause beyond both — the mollified
+two-point functions must converge to an explicitly quantified locally integrable limit —
+and the library proves the strengthened clause implies the recorded one
+(`TwoPointIntegrable.schwingerTwoPointFunction_locallyIntegrable`).
 
 ## Verifying
 
